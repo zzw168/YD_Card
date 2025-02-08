@@ -1,5 +1,7 @@
 import sys
+import threading
 import time
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
 import pynput
 from PySide6.QtCore import Slot, QThread, Signal
@@ -9,7 +11,30 @@ from PySide6.QtWidgets import QMainWindow, QMessageBox, QApplication, QTextBrows
 from YD_UI import Ui_MainWindow
 from utils.Serial485_unit import Serial485
 from utils.SportCard_unit import SportCard, card_res
-from utils.tool_unit import succeed, fail
+from utils.tool_unit import succeed, fail, is_natural_num
+
+
+class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html; charset=utf-8')
+        self.end_headers()
+        self.wfile.write('你对HTTP服务端发送了POST'.encode('utf-8'))
+        # content_length = int(self.headers['Content-Length'])
+        content_length = int(self.headers.get('Content-Length', 0))
+        post_data = self.rfile.read(content_length).decode('utf-8')
+        print("客户端发送的post内容=" + post_data)
+        if post_data == "start":
+            self.handle_start_command()
+        if post_data == "stop":
+            self.handle_stop_command()
+
+    def handle_start_command(self):
+        pass
+        print('执行开始')
+
+    def handle_stop_command(self):
+        print('执行停止')
 
 
 def organ_shoot():  # 弹射开关
@@ -96,7 +121,15 @@ def cmd_stop():
 
 
 def cmd_run():
-    pass
+    global point_data
+    for index in range(0, 5):
+        if is_natural_num(getattr(ui, 'lineEdit_axis%s' % index).text()):
+            point_data['axis'][index] = getattr(ui, 'lineEdit_axis%s' % index).text()
+        if is_natural_num(getattr(ui, 'lineEdit_speed%s' % index).text()):
+            point_data['speed'][index] = getattr(ui, 'lineEdit_speed%s' % index).text()
+        if is_natural_num(getattr(ui, 'lineEdit_delay%s' % index).text()):
+            point_data['delay'][index] = getattr(ui, 'lineEdit_delay%s' % index).text()
+    PlanCmd_Thread.run_flg = True
 
 
 def keyboard_release(key):
@@ -459,7 +492,7 @@ class AxisThread(QThread):
                 res = sc.card_update()
                 if res == 0:
                     flg_start['card'] = True
-                    Pos_Thread.run_flg = True
+                    # Pos_Thread.run_flg = True
                     self._signal.emit(succeed('轴复位完成！'))
                 else:
                     flg_start['card'] = False
@@ -474,6 +507,9 @@ class AxisThread(QThread):
 def Axis_signal_accept(msg):
     # print(message)
     try:
+        if '轴复位完成！' in msg:
+            for index in range(0, 5):
+                getattr(ui, 'lineEdit_axis%s' % index).setText('0')
         ui.textBrowser.append(str(msg))
         scroll_to_bottom(ui.textBrowser)
     except:
@@ -507,27 +543,28 @@ class PlanCmdThread(QThread):
                 continue
 
             if flg_start['card']:
-                self._signal.emit(succeed("运动流程：开始！"))
+                self._signal.emit(succeed("运动：开始！"))
                 self.cmd_next = False  # 初始化手动快速跳过下一步动作标志
-                time_old = int(time.time())
-                self._signal.emit(succeed('用时 %s秒！' % (int(time.time()) - time_old)))
                 try:
                     # 轴运动
                     axis_bit = 0  # 非延迟轴统计
                     max_delay_time = 0  # 记录最大延迟时间
                     delay_list = []  # 延迟的轴列表
                     for index in range(0, 5):
-                        axis_item = getattr(ui, 'lineEdit_axis%s' % index).text()
-                        speed_item = getattr(ui, 'lineEdit_speed%s' % index).text()
-                        delay_item = getattr(ui, 'lineEdit_delay%s' % index).text()
+                        axis_item = point_data['axis'][index]
+                        if float(axis_item) < 0 and (index in [0, 1]):
+                            axis_item = '0'
+                        speed_item = point_data['speed'][index]
+                        delay_item = point_data['delay'][index]
+
                         sc.card_move(index + 1, int(float(axis_item)),
                                      vel=abs(int(float(speed_item))))
                         if float(delay_item) == 0:
                             axis_bit += axis_list[index]
                         else:
                             delay_list.append([axis_list[index], float(format(float(delay_item), ".3f"))])
-                        if max_delay_time < float(format(float(speed_item[3]), ".3f")):
-                            max_delay_time = float(format(float(speed_item[3]), ".3f"))
+                        if max_delay_time < float(format(float(delay_item), ".3f")):
+                            max_delay_time = float(format(float(delay_item), ".3f"))
                     list_equal = {}
                     for index in range(len(delay_list)):
                         if not (delay_list[index][1] in list_equal.keys()):
@@ -550,13 +587,14 @@ class PlanCmdThread(QThread):
                                 sc.card_update(delay_list[index][0])
                                 old_time = t
                         time.sleep(0.01)
+                    self._signal.emit(succeed('运动：完成'))
                     print('动作已完成！')
                 except:
                     print("运动板运行出错！")
                     self._signal.emit(fail("运动板通信出错！"))
                 if not flg_start['card']:
                     self._signal.emit(fail("运动卡未链接！"))
-                self.run_flg = False
+            self.run_flg = False
 
 
 def Cmd_signal_accept(msg):
@@ -594,6 +632,7 @@ class ZApp(QApplication):
             Axis_Thread.stop()
             Pos_Thread.stop()
             CardStart_Thread.stop()
+            PlanCmd_Thread.stop()
         except Exception as e:
             print(f"Error stopping threads: {e}")
 
@@ -603,6 +642,7 @@ class ZApp(QApplication):
             Axis_Thread.wait()
             Pos_Thread.wait()
             CardStart_Thread.wait()
+            PlanCmd_Thread.wait()
         except Exception as e:
             print(f"Error waiting threads: {e}")
 
@@ -654,11 +694,13 @@ if __name__ == '__main__':
     s485.s485_Axis_No = 'COM22'
 
     flg_key_run = True  # 键盘控制标志
-    axis_reset = True  # 轴复位标志
     pValue = [0, 0, 0, 0, 0]  # 各轴位置
     five_key = [1, 1, 1, 1, -1]
     five_axis = [1, 1, 1, 1, -1]
-    flg_start = {'card': False, 's485': False, 'obs': False, 'ai': False, 'ai_end': False, 'server': False}  # 各硬件启动标志
+    flg_start = {'card': False, 's485': False}  # 各硬件启动标志
+    point_data = {'axis': ['0'] * 5,
+                  'speed': ['100'] * 5,
+                  'delay': ['0'] * 5}
 
     listener = pynput.keyboard.Listener(on_press=keyboard_press, on_release=keyboard_release)
     listener.start()  # 键盘监听线程 1
@@ -677,6 +719,12 @@ if __name__ == '__main__':
     PlanCmd_Thread = PlanCmdThread()  # 总运行方案 2
     PlanCmd_Thread._signal.connect(Cmd_signal_accept)
     PlanCmd_Thread.start()
+
+    httpServer_addr = ('0.0.0.0', 22)  # 接收网络数据包控制
+    # 启动 HTTPServer 接收外部命令控制本程序 18
+    httpd = HTTPServer(httpServer_addr, SimpleHTTPRequestHandler)
+    http_thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+    http_thread.start()
 
     ui.pushButton_CardStart.clicked.connect(card_start)
     ui.pushButton_CardStop.clicked.connect(cmd_stop)
