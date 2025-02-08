@@ -198,27 +198,28 @@ class Serial485:
         return self.ser.is_open
 
     # 五轴校正
-    def get_axis_pos(self):
-        nAxisList = [bytes.fromhex('01030B07000277EE'),
-                     bytes.fromhex('02030B07000277DD'),
-                     bytes.fromhex('03030B070002760C'),
-                     bytes.fromhex('04030B07000277BB'),
-                     bytes.fromhex('05030B070002766A')]
+    def get_axis_pos(self, nAxis):
+        """
+            nAxisList = [bytes.fromhex('01030B07000277EE'),
+                                 bytes.fromhex('02030B07000277DD'),
+                                 bytes.fromhex('03030B070002760C'),
+                                 bytes.fromhex('04030B07000277BB'),
+                                 bytes.fromhex('05030B070002766A')]
+        """
         try:
-            sercol = serial.Serial(port=self.s485_Axis_No, baudrate=57600, stopbits=2, timeout=1)
-            datas = []
-            if sercol.is_open:
+            axis_data = {}
+            ser_axis = serial.Serial(port=self.s485_Axis_No, baudrate=57600, stopbits=2, timeout=1)
+            if ser_axis.is_open:
                 print('端口已经打开')
-                for nAxis in nAxisList:
-                    sercol.write(nAxis)
-                    data = sercol.read(10)
-                    print("读取数据 %s" % data)
-                    if data:
-                        (nAxisNum, highPos) = self.analysisData(data)
-                        if nAxisNum != 0:
-                            datas.append({'nAxisNum': nAxisNum, 'highPos': highPos})
-            sercol.close()
-            return datas
+                ser_axis.write(nAxis)
+                data = ser_axis.read(10)
+                print("读取数据 %s" % data)
+                if data:
+                    (nAxisNum, highPos) = self.analysisData(data)
+                    if nAxisNum != 0:
+                        axis_data = {'nAxisNum': nAxisNum, 'highPos': highPos}
+            ser_axis.close()
+            return axis_data
         except BaseException as e:
             print('轴伺服器复位出错 %s' % e)
             return 0
