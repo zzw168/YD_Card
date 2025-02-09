@@ -711,7 +711,7 @@
              <property name="minimumSize">
               <size>
                <width>0</width>
-               <height>0</height>
+               <height>30</height>
               </size>
              </property>
              <property name="frameShape">
@@ -729,6 +729,12 @@
               </property>
               <item row="0" column="0">
                <widget class="QCheckBox" name="checkBox_key">
+                <property name="minimumSize">
+                 <size>
+                  <width>90</width>
+                  <height>0</height>
+                 </size>
+                </property>
                 <property name="font">
                  <font>
                   <family>微软雅黑</family>
@@ -741,17 +747,17 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="2">
+              <item row="0" column="3">
                <widget class="QLineEdit" name="lineEdit_CardNo_2">
                 <property name="minimumSize">
                  <size>
-                  <width>80</width>
+                  <width>30</width>
                   <height>0</height>
                  </size>
                 </property>
                 <property name="maximumSize">
                  <size>
-                  <width>80</width>
+                  <width>30</width>
                   <height>16777215</height>
                  </size>
                 </property>
@@ -770,7 +776,7 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="1">
+              <item row="0" column="2">
                <widget class="QLabel" name="label_19">
                 <property name="minimumSize">
                  <size>
@@ -793,6 +799,20 @@
                 </property>
                 <property name="text">
                  <string>端口：</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QCheckBox" name="checkBox_point">
+                <property name="font">
+                 <font>
+                  <family>微软雅黑</family>
+                  <pointsize>10</pointsize>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>点运动</string>
                 </property>
                </widget>
               </item>

@@ -1,3 +1,4 @@
+import copy
 import json
 import socket
 import sys
@@ -103,7 +104,7 @@ def cmd_run():
         if is_natural_num(getattr(ui, 'lineEdit_axis%s' % index).text()):
             point_data['axis'][index] = getattr(ui, 'lineEdit_axis%s' % index).text()
         if is_natural_num(getattr(ui, 'lineEdit_speed%s' % index).text()):
-            point_data['speed'][index] = getattr(ui, 'lineEdit_speed%s' % index).text()
+            point_data['speed'][index][0] = getattr(ui, 'lineEdit_speed%s' % index).text()
         if is_natural_num(getattr(ui, 'lineEdit_delay%s' % index).text()):
             point_data['delay'][index] = getattr(ui, 'lineEdit_delay%s' % index).text()
     PlanCmd_Thread.run_flg = True
@@ -341,7 +342,7 @@ class PosThread(QThread):
 
     def __init__(self):
         super(PosThread, self).__init__()
-        self.run_flg = False
+        self.run_flg = True
         self.running = True
 
     def stop(self):
@@ -352,7 +353,7 @@ class PosThread(QThread):
     def run(self) -> None:
         global pValue
         while self.running:
-            time.sleep(0.1)
+            time.sleep(0.2)
             if not self.run_flg:
                 continue
             if flg_start['card']:
@@ -363,14 +364,14 @@ class PosThread(QThread):
 
                 except:
                     pass
-            self.run_flg = False
+            # self.run_flg = False
 
 
-def pos_signal_accept(message):
+def pos_signal_accept(msg):
     try:
-        if len(message) == 5:
-            for i in range(0, len(message)):
-                getattr(ui, 'lineEdit_axis%s' % i).setText(str(message[i]))
+        if len(msg) == 5 and not ui.checkBox_point.isChecked():
+            for i in range(0, len(msg)):
+                getattr(ui, 'lineEdit_axis%s' % i).setText(str(msg[i]))
         else:
             pass
     except:
@@ -512,6 +513,7 @@ class SocketThread(QThread):
 
     def run(self) -> None:
         global flg_start
+        message = '{yq}'
         while self.running:
             time.sleep(2)
             if not self.run_flg:
@@ -519,65 +521,95 @@ class SocketThread(QThread):
             try:
                 # 创建 TCP 套接字
                 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
                 # 连接服务器
                 client_socket.connect((server_ip, server_port))
                 print(f"成功连接到服务器 {server_ip}:{server_port}")
 
                 # 持续与服务器交互
                 while self.run_flg:
-                    # 发送数据到服务器
-                    message = '{yq}'
-                    client_socket.sendall(message.encode("utf-8"))
-                    print(f"已发送数据: {message}")
+                    p = ['0'] * 5
+                    for index in range(len(p)):
+                        p[index] = str(pValue[index])
+                    print(p, point_data['axis'])
+                    if p == point_data['axis']:
+                        # 发送数据到服务器
+                        client_socket.sendall(message.encode("gbk"))
+                        print(f"已发送数据: {message}")
 
-                    # 接收服务器响应
-                    response = client_socket.recv(1024).decode("utf-8")
-                    print(f"服务器响应: {response}")
-                    data_split(response)
-                    PlanCmd_Thread.run_flg = True
+                        response = client_socket.recv(1024).decode("gbk", errors="ignore")
+
+                        self._signal.emit(response)
+                        print(f"服务器响应: {response}")
+                        message = data_split(response)
+                    time.sleep(0.1)
 
             except ConnectionError as e:
                 print(f"连接失败: {e}")
             finally:
-                client_socket.close()
+                # client_socket.close()
                 print("已关闭连接")
 
-def Socket_signal_accept(msg):
-    print(msg)
 
-def  data_split(data):
+def Socket_signal_accept(msg):
+    try:
+        if '{yj1}' == msg:
+            ui.checkBox_key.setChecked(True)
+        elif '{yj0}' == msg:
+            ui.checkBox_key.setChecked(False)
+        ui.textBrowser.append(str(msg))
+        scroll_to_bottom(ui.textBrowser)
+    except:
+        print("运行数据处理出错！")
+
+
+def data_split(data):
     global point_data
     result = data.split("|")
 
-    res_num = len(result)-1
+    res_num = len(result) - 1
 
-    if '{yd' in result[0] :
-        result[0] = result[0][3:]
+    position = result[0].find('{yd')
+    if position != -1:
+        result[0] = result[0][position + 3:]
         data_axis = result[0: 5]
         point_data['axis'] = data_axis
 
-        result[res_num] = result[res_num][0:-2]
+        result[res_num] = result[res_num][0:-1]
         data_speed = result[res_num].split(",")
         for index, item in enumerate(data_speed):
-            data_speed[index] = item.split("#")
-            point_data['delay'][index] = data_speed[index][0]
-            if not point_data['delay'][index].isdigit():
-                point_data['delay'][index] = '0'
-            else:
-                point_data['delay'][index] = str(float(point_data['delay'][index]) / 1000)
-            point_data['speed'][index] = data_speed[index][1:]
-            for j, j_item in enumerate(point_data['speed'][index]) :
-                if not j_item.isdigit():
-                    point_data['speed'][index][j] = '0'
+            if index < 5:
+                data_speed[index] = item.split("#")
+                point_data['delay'][index] = data_speed[index][0]
+                if not point_data['delay'][index].isdigit():
+                    point_data['delay'][index] = '0'
+                else:
+                    point_data['delay'][index] = str(float(point_data['delay'][index]) / 1000)
+                point_data['speed'][index] = data_speed[index][1:]
+                for j, j_item in enumerate(point_data['speed'][index]):
+                    if j_item == '':
+                        point_data['speed'][index][j] = '0'
+                    if point_data['speed'][index][0] == '0':
+                        point_data['speed'][index][0] = result[5]
+                    if point_data['speed'][index][1] == '0':
+                        point_data['speed'][index][1] = result[6]
+                    if point_data['speed'][index][2] == '0':
+                        point_data['speed'][index][2] = result[7]
         print(point_data)
+        PlanCmd_Thread.run_flg = True
+        return '{yq}'
+    if '{yy}' == data:
+        return '{yy%s,%s,%s,%s,%s}' % (str(pValue[0]), str(pValue[1]), str(pValue[2]), str(pValue[3]), str(pValue[4]))
+    elif '{y3' in data:
+        return '%s@%s|%s|%s|%s|%s}' % (
+            data[0:-1], str(pValue[0]), str(pValue[1]), str(pValue[2]), str(pValue[3]), str(pValue[4]))
 
-'''
-    CmdThread(QThread) 执行运动方案线程
-'''
+    return '{yq}'
 
 
 class PlanCmdThread(QThread):
+    """
+    CmdThread(QThread) 执行运动方案线程
+    """
     _signal = Signal(object)
 
     def __init__(self):
@@ -599,7 +631,6 @@ class PlanCmdThread(QThread):
                 continue
 
             if flg_start['card']:
-                self._signal.emit(succeed("运动：开始！"))
                 self.cmd_next = False  # 初始化手动快速跳过下一步动作标志
                 try:
                     # 轴运动
@@ -612,9 +643,14 @@ class PlanCmdThread(QThread):
                             axis_item = '0'
                         speed_item = point_data['speed'][index]
                         delay_item = point_data['delay'][index]
-
+                        print(axis_item, speed_item, delay_item)
                         sc.card_move(index + 1, int(float(axis_item)),
-                                     vel=abs(int(float(speed_item))))
+                                     vel=abs(int(float(speed_item[0]))),
+                                     dAcc=float(speed_item[1]),
+                                     dDec=float(speed_item[2]),
+                                     dVelStart=float(speed_item[3]),
+                                     dSmoothTime=int(float(speed_item[4]))
+                                     )
                         if float(delay_item) == 0:
                             axis_bit += axis_list[index]
                         else:
@@ -643,7 +679,6 @@ class PlanCmdThread(QThread):
                                 sc.card_update(delay_list[index][0])
                                 old_time = t
                         time.sleep(0.01)
-                    self._signal.emit(succeed('运动：完成'))
                     print('动作已完成！')
                 except:
                     print("运动板运行出错！")
@@ -757,7 +792,7 @@ if __name__ == '__main__':
     five_axis = [1, 1, 1, 1, -1]
     flg_start = {'card': False, 's485': False}  # 各硬件启动标志
     point_data = {'axis': ['0'] * 5,
-                  'speed': ['100'] * 5,
+                  'speed': [['100', '0.3', '0.2', '5', '1']] * 5,
                   'delay': ['0'] * 5}
 
     listener = pynput.keyboard.Listener(on_press=keyboard_press, on_release=keyboard_release)

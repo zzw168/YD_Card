@@ -264,7 +264,7 @@ class Ui_MainWindow(object):
 
         self.frame_16 = QFrame(self.groupBox_6)
         self.frame_16.setObjectName(u"frame_16")
-        self.frame_16.setMinimumSize(QSize(0, 0))
+        self.frame_16.setMinimumSize(QSize(0, 30))
         self.frame_16.setFrameShape(QFrame.Shape.StyledPanel)
         self.frame_16.setFrameShadow(QFrame.Shadow.Raised)
         self.gridLayout_19 = QGridLayout(self.frame_16)
@@ -272,18 +272,19 @@ class Ui_MainWindow(object):
         self.gridLayout_19.setContentsMargins(-1, 0, -1, 0)
         self.checkBox_key = QCheckBox(self.frame_16)
         self.checkBox_key.setObjectName(u"checkBox_key")
+        self.checkBox_key.setMinimumSize(QSize(90, 0))
         self.checkBox_key.setFont(font)
 
         self.gridLayout_19.addWidget(self.checkBox_key, 0, 0, 1, 1)
 
         self.lineEdit_CardNo_2 = QLineEdit(self.frame_16)
         self.lineEdit_CardNo_2.setObjectName(u"lineEdit_CardNo_2")
-        self.lineEdit_CardNo_2.setMinimumSize(QSize(80, 0))
-        self.lineEdit_CardNo_2.setMaximumSize(QSize(80, 16777215))
+        self.lineEdit_CardNo_2.setMinimumSize(QSize(30, 0))
+        self.lineEdit_CardNo_2.setMaximumSize(QSize(30, 16777215))
         self.lineEdit_CardNo_2.setFont(font1)
         self.lineEdit_CardNo_2.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.gridLayout_19.addWidget(self.lineEdit_CardNo_2, 0, 2, 1, 1)
+        self.gridLayout_19.addWidget(self.lineEdit_CardNo_2, 0, 3, 1, 1)
 
         self.label_19 = QLabel(self.frame_16)
         self.label_19.setObjectName(u"label_19")
@@ -291,7 +292,13 @@ class Ui_MainWindow(object):
         self.label_19.setMaximumSize(QSize(40, 16777215))
         self.label_19.setFont(font)
 
-        self.gridLayout_19.addWidget(self.label_19, 0, 1, 1, 1)
+        self.gridLayout_19.addWidget(self.label_19, 0, 2, 1, 1)
+
+        self.checkBox_point = QCheckBox(self.frame_16)
+        self.checkBox_point.setObjectName(u"checkBox_point")
+        self.checkBox_point.setFont(font)
+
+        self.gridLayout_19.addWidget(self.checkBox_point, 0, 1, 1, 1)
 
 
         self.gridLayout_22.addWidget(self.frame_16, 0, 0, 1, 1)
@@ -708,6 +715,7 @@ class Ui_MainWindow(object):
         self.checkBox_key.setText(QCoreApplication.translate("MainWindow", u"\u952e\u76d8\u5b9a\u4f4d", None))
         self.lineEdit_CardNo_2.setText(QCoreApplication.translate("MainWindow", u"22", None))
         self.label_19.setText(QCoreApplication.translate("MainWindow", u"\u7aef\u53e3\uff1a", None))
+        self.checkBox_point.setText(QCoreApplication.translate("MainWindow", u"\u70b9\u8fd0\u52a8", None))
         self.label_18.setText(QCoreApplication.translate("MainWindow", u"\u8fd0\u52a8\u5361\u53f7\uff1a", None))
         self.pushButton_CardStart.setText(QCoreApplication.translate("MainWindow", u"\u542f\u52a8\u8fd0\u52a8\u5361", None))
         self.pushButton_CardStop.setText(QCoreApplication.translate("MainWindow", u"\u505c\u6b62", None))
