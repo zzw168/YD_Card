@@ -1,8 +1,8 @@
+import json
+import socket
 import sys
 import threading
 import time
-from http.server import HTTPServer, BaseHTTPRequestHandler
-
 import pynput
 from PySide6.QtCore import Slot, QThread, Signal
 from PySide6.QtGui import QIcon, QTextCursor
@@ -12,29 +12,6 @@ from YD_UI import Ui_MainWindow
 from utils.Serial485_unit import Serial485
 from utils.SportCard_unit import SportCard, card_res
 from utils.tool_unit import succeed, fail, is_natural_num
-
-
-class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
-    def do_POST(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html; charset=utf-8')
-        self.end_headers()
-        self.wfile.write('你对HTTP服务端发送了POST'.encode('utf-8'))
-        # content_length = int(self.headers['Content-Length'])
-        content_length = int(self.headers.get('Content-Length', 0))
-        post_data = self.rfile.read(content_length).decode('utf-8')
-        print("客户端发送的post内容=" + post_data)
-        if post_data == "start":
-            self.handle_start_command()
-        if post_data == "stop":
-            self.handle_stop_command()
-
-    def handle_start_command(self):
-        pass
-        print('执行开始')
-
-    def handle_stop_command(self):
-        print('执行停止')
 
 
 def organ_shoot():  # 弹射开关
@@ -516,6 +493,85 @@ def Axis_signal_accept(msg):
         print("运行数据处理出错！")
 
 
+class SocketThread(QThread):
+    """
+    SocketThread(QThread) 获取动作线程
+    """
+
+    _signal = Signal(object)
+
+    def __init__(self):
+        super().__init__()
+        self.run_flg = True
+        self.running = True
+
+    def stop(self):
+        self.run_flg = False
+        self.running = False  # 修改标志位，线程优雅退出
+        self.quit()  # 退出线程事件循环
+
+    def run(self) -> None:
+        global flg_start
+        while self.running:
+            time.sleep(2)
+            if not self.run_flg:
+                continue
+            try:
+                # 创建 TCP 套接字
+                client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+                # 连接服务器
+                client_socket.connect((server_ip, server_port))
+                print(f"成功连接到服务器 {server_ip}:{server_port}")
+
+                # 持续与服务器交互
+                while self.run_flg:
+                    # 发送数据到服务器
+                    message = '{yq}'
+                    client_socket.sendall(message.encode("utf-8"))
+                    print(f"已发送数据: {message}")
+
+                    # 接收服务器响应
+                    response = client_socket.recv(1024).decode("utf-8")
+                    print(f"服务器响应: {response}")
+                    data_split(response)
+                    PlanCmd_Thread.run_flg = True
+
+            except ConnectionError as e:
+                print(f"连接失败: {e}")
+            finally:
+                client_socket.close()
+                print("已关闭连接")
+
+def Socket_signal_accept(msg):
+    print(msg)
+
+def  data_split(data):
+    global point_data
+    result = data.split("|")
+
+    res_num = len(result)-1
+
+    if '{yd' in result[0] :
+        result[0] = result[0][3:]
+        data_axis = result[0: 5]
+        point_data['axis'] = data_axis
+
+        result[res_num] = result[res_num][0:-2]
+        data_speed = result[res_num].split(",")
+        for index, item in enumerate(data_speed):
+            data_speed[index] = item.split("#")
+            point_data['delay'][index] = data_speed[index][0]
+            if not point_data['delay'][index].isdigit():
+                point_data['delay'][index] = '0'
+            else:
+                point_data['delay'][index] = str(float(point_data['delay'][index]) / 1000)
+            point_data['speed'][index] = data_speed[index][1:]
+            for j, j_item in enumerate(point_data['speed'][index]) :
+                if not j_item.isdigit():
+                    point_data['speed'][index][j] = '0'
+        print(point_data)
+
 '''
     CmdThread(QThread) 执行运动方案线程
 '''
@@ -633,6 +689,7 @@ class ZApp(QApplication):
             Pos_Thread.stop()
             CardStart_Thread.stop()
             PlanCmd_Thread.stop()
+            Socket_Thread.stop()
         except Exception as e:
             print(f"Error stopping threads: {e}")
 
@@ -643,6 +700,7 @@ class ZApp(QApplication):
             Pos_Thread.wait()
             CardStart_Thread.wait()
             PlanCmd_Thread.wait()
+            Socket_Thread.wait()
         except Exception as e:
             print(f"Error waiting threads: {e}")
 
@@ -720,11 +778,13 @@ if __name__ == '__main__':
     PlanCmd_Thread._signal.connect(Cmd_signal_accept)
     PlanCmd_Thread.start()
 
-    httpServer_addr = ('0.0.0.0', 22)  # 接收网络数据包控制
-    # 启动 HTTPServer 接收外部命令控制本程序 18
-    httpd = HTTPServer(httpServer_addr, SimpleHTTPRequestHandler)
-    http_thread = threading.Thread(target=httpd.serve_forever, daemon=True)
-    http_thread.start()
+    # 目标服务器 IP 和端口
+    server_ip = "127.0.0.1"  # 替换为实际服务器地址
+    server_port = 19888
+
+    Socket_Thread = SocketThread()  # 轴复位 7
+    Socket_Thread._signal.connect(Socket_signal_accept)
+    Socket_Thread.start()
 
     ui.pushButton_CardStart.clicked.connect(card_start)
     ui.pushButton_CardStop.clicked.connect(cmd_stop)
