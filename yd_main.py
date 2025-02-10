@@ -869,6 +869,12 @@ def load_main_yaml():
         print(ports)
         for i, key in enumerate(voltage.keys()):
             Voltage_list[i] = voltage[key]
+            if '弹射' in voltage[key]:
+                ui.lineEdit_shoot.setText(str(i + 1))
+            elif '起' in voltage[key]:
+                ui.lineEdit_start.setText(str(i + 1))
+            elif '终点' in voltage[key]:
+                ui.lineEdit_end.setText(str(i + 1))
         for i, key in enumerate(ports.keys()):
             if key == '全局配置.IP':
                 position = ports[key].rfind(".")
@@ -904,6 +910,15 @@ def save_main_yaml():
         except:
             ui.textBrowser.append(fail('方案保存：失败'))
         print("保存成功~！")
+
+
+def clean_browser():
+    # 获取所有行
+    lines = ui.textBrowser.toPlainText().split("\n")
+    if len(lines) > 500:
+        # 只保留最后 max_lines 行
+        ui.textBrowser.clear()
+        ui.textBrowser.setPlainText("\n".join(lines[-500:]))
 
 
 class ZApp(QApplication):
@@ -984,7 +999,9 @@ class ZMainwindow(QMainWindow):
         else:
             event.ignore()  # 忽略关闭事件，程序继续运行
 
-
+def my_test():
+    # 模拟写入超大文本
+    pass
 if __name__ == '__main__':
     app = ZApp(sys.argv)
 
@@ -1053,6 +1070,7 @@ if __name__ == '__main__':
     ui.pushButton_CardReset.clicked.connect(card_reset)
     ui.pushButton_CardCloseAll.clicked.connect(card_close_all)
     ui.pushButton_CardRun.clicked.connect(cmd_run)
+    ui.pushButton_CardNext.clicked.connect(my_test)
 
     ui.checkBox_shoot.checkStateChanged.connect(organ_shoot)
     ui.checkBox_start.checkStateChanged.connect(organ_start)
@@ -1061,5 +1079,6 @@ if __name__ == '__main__':
 
     ui.lineEdit_five_key.editingFinished.connect(save_main_yaml)
     ui.lineEdit_five_axis.editingFinished.connect(save_main_yaml)
+    ui.textBrowser.textChanged.connect(clean_browser)
 
     sys.exit(app.exec())
