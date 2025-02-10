@@ -881,6 +881,31 @@ def load_main_yaml():
         print('机关数据获取失败！')
 
 
+def save_main_yaml():
+    global five_axis
+    global five_key
+
+    file = "main_config.yml"
+    if os.path.exists(file):
+        try:
+            with (open(file, "r", encoding="utf-8") as f):
+                main_all = yaml.safe_load(f)
+                # print(main_all)
+                main_all['five_axis'] = eval(ui.lineEdit_five_axis.text())
+                main_all['five_key'] = eval(ui.lineEdit_five_key.text())
+
+                # 赋值变量
+                five_axis = main_all['five_axis']
+                five_key = main_all['five_key']
+            with open(file, "w", encoding="utf-8") as f:
+                yaml.dump(main_all, f, allow_unicode=True)
+            f.close()
+            ui.textBrowser.append(succeed('方案保存：成功'))
+        except:
+            ui.textBrowser.append(fail('方案保存：失败'))
+        print("保存成功~！")
+
+
 class ZApp(QApplication):
     def __init__(self, argv):
         super().__init__(argv)
@@ -1033,5 +1058,8 @@ if __name__ == '__main__':
     ui.checkBox_start.checkStateChanged.connect(organ_start)
     ui.checkBox_end.checkStateChanged.connect(organ_end)
     ui.checkBox_switch.checkStateChanged.connect(organ_number)
+
+    ui.lineEdit_five_key.editingFinished.connect(save_main_yaml)
+    ui.lineEdit_five_axis.editingFinished.connect(save_main_yaml)
 
     sys.exit(app.exec())
