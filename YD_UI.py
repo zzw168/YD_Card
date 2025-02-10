@@ -270,21 +270,27 @@ class Ui_MainWindow(object):
         self.gridLayout_19 = QGridLayout(self.frame_16)
         self.gridLayout_19.setObjectName(u"gridLayout_19")
         self.gridLayout_19.setContentsMargins(-1, 0, -1, 0)
+        self.lineEdit_s485_Axis_No = QLineEdit(self.frame_16)
+        self.lineEdit_s485_Axis_No.setObjectName(u"lineEdit_s485_Axis_No")
+        self.lineEdit_s485_Axis_No.setMinimumSize(QSize(30, 0))
+        self.lineEdit_s485_Axis_No.setMaximumSize(QSize(30, 16777215))
+        self.lineEdit_s485_Axis_No.setFont(font1)
+        self.lineEdit_s485_Axis_No.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.gridLayout_19.addWidget(self.lineEdit_s485_Axis_No, 0, 3, 1, 1)
+
+        self.checkBox_point = QCheckBox(self.frame_16)
+        self.checkBox_point.setObjectName(u"checkBox_point")
+        self.checkBox_point.setFont(font)
+
+        self.gridLayout_19.addWidget(self.checkBox_point, 0, 1, 1, 1)
+
         self.checkBox_key = QCheckBox(self.frame_16)
         self.checkBox_key.setObjectName(u"checkBox_key")
         self.checkBox_key.setMinimumSize(QSize(90, 0))
         self.checkBox_key.setFont(font)
 
         self.gridLayout_19.addWidget(self.checkBox_key, 0, 0, 1, 1)
-
-        self.lineEdit_CardNo_2 = QLineEdit(self.frame_16)
-        self.lineEdit_CardNo_2.setObjectName(u"lineEdit_CardNo_2")
-        self.lineEdit_CardNo_2.setMinimumSize(QSize(30, 0))
-        self.lineEdit_CardNo_2.setMaximumSize(QSize(30, 16777215))
-        self.lineEdit_CardNo_2.setFont(font1)
-        self.lineEdit_CardNo_2.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self.gridLayout_19.addWidget(self.lineEdit_CardNo_2, 0, 3, 1, 1)
 
         self.label_19 = QLabel(self.frame_16)
         self.label_19.setObjectName(u"label_19")
@@ -293,12 +299,6 @@ class Ui_MainWindow(object):
         self.label_19.setFont(font)
 
         self.gridLayout_19.addWidget(self.label_19, 0, 2, 1, 1)
-
-        self.checkBox_point = QCheckBox(self.frame_16)
-        self.checkBox_point.setObjectName(u"checkBox_point")
-        self.checkBox_point.setFont(font)
-
-        self.gridLayout_19.addWidget(self.checkBox_point, 0, 1, 1, 1)
 
 
         self.gridLayout_22.addWidget(self.frame_16, 0, 0, 1, 1)
@@ -449,16 +449,10 @@ class Ui_MainWindow(object):
         self.groupBox_17 = QGroupBox(self.tab_1)
         self.groupBox_17.setObjectName(u"groupBox_17")
         self.groupBox_17.setMinimumSize(QSize(0, 0))
-        self.groupBox_17.setMaximumSize(QSize(600, 150))
+        self.groupBox_17.setMaximumSize(QSize(600, 100))
         self.groupBox_17.setFont(font)
         self.gridLayout_35 = QGridLayout(self.groupBox_17)
         self.gridLayout_35.setObjectName(u"gridLayout_35")
-        self.lineEdit_five_axis = QLineEdit(self.groupBox_17)
-        self.lineEdit_five_axis.setObjectName(u"lineEdit_five_axis")
-        self.lineEdit_five_axis.setFont(font1)
-
-        self.gridLayout_35.addWidget(self.lineEdit_five_axis, 4, 2, 1, 1)
-
         self.label_79 = QLabel(self.groupBox_17)
         self.label_79.setObjectName(u"label_79")
         font2 = QFont()
@@ -467,45 +461,25 @@ class Ui_MainWindow(object):
         font2.setBold(False)
         self.label_79.setFont(font2)
 
-        self.gridLayout_35.addWidget(self.label_79, 4, 0, 1, 1)
+        self.gridLayout_35.addWidget(self.label_79, 2, 0, 1, 1)
 
-        self.lineEdit_five_key = QLineEdit(self.groupBox_17)
-        self.lineEdit_five_key.setObjectName(u"lineEdit_five_key")
-        self.lineEdit_five_key.setFont(font1)
+        self.lineEdit_five_axis = QLineEdit(self.groupBox_17)
+        self.lineEdit_five_axis.setObjectName(u"lineEdit_five_axis")
+        self.lineEdit_five_axis.setFont(font1)
 
-        self.gridLayout_35.addWidget(self.lineEdit_five_key, 4, 4, 1, 1)
-
-        self.label_33 = QLabel(self.groupBox_17)
-        self.label_33.setObjectName(u"label_33")
-        self.label_33.setFont(font2)
-
-        self.gridLayout_35.addWidget(self.label_33, 0, 0, 1, 2)
+        self.gridLayout_35.addWidget(self.lineEdit_five_axis, 2, 1, 1, 1)
 
         self.label_81 = QLabel(self.groupBox_17)
         self.label_81.setObjectName(u"label_81")
         self.label_81.setFont(font2)
 
-        self.gridLayout_35.addWidget(self.label_81, 4, 3, 1, 1)
+        self.gridLayout_35.addWidget(self.label_81, 3, 0, 1, 1)
 
-        self.lineEdit_s485_Axis_No = QLineEdit(self.groupBox_17)
-        self.lineEdit_s485_Axis_No.setObjectName(u"lineEdit_s485_Axis_No")
-        self.lineEdit_s485_Axis_No.setFont(font1)
-        self.lineEdit_s485_Axis_No.setReadOnly(False)
+        self.lineEdit_five_key = QLineEdit(self.groupBox_17)
+        self.lineEdit_five_key.setObjectName(u"lineEdit_five_key")
+        self.lineEdit_five_key.setFont(font1)
 
-        self.gridLayout_35.addWidget(self.lineEdit_s485_Axis_No, 1, 2, 1, 3)
-
-        self.label_36 = QLabel(self.groupBox_17)
-        self.label_36.setObjectName(u"label_36")
-        self.label_36.setFont(font2)
-
-        self.gridLayout_35.addWidget(self.label_36, 1, 0, 1, 2)
-
-        self.lineEdit_cardNo = QLineEdit(self.groupBox_17)
-        self.lineEdit_cardNo.setObjectName(u"lineEdit_cardNo")
-        self.lineEdit_cardNo.setFont(font1)
-        self.lineEdit_cardNo.setReadOnly(False)
-
-        self.gridLayout_35.addWidget(self.lineEdit_cardNo, 0, 2, 1, 3)
+        self.gridLayout_35.addWidget(self.lineEdit_five_key, 3, 1, 1, 1)
 
 
         self.gridLayout_3.addWidget(self.groupBox_17, 0, 0, 1, 1)
@@ -633,10 +607,10 @@ class Ui_MainWindow(object):
 #endif // QT_CONFIG(statustip)
         self.lineEdit_delay4.setText(QCoreApplication.translate("MainWindow", u"0", None))
         self.lineEdit_delay4.setPlaceholderText(QCoreApplication.translate("MainWindow", u"\u5ef6\u8fdf", None))
-        self.checkBox_key.setText(QCoreApplication.translate("MainWindow", u"\u952e\u76d8\u5b9a\u4f4d", None))
-        self.lineEdit_CardNo_2.setText(QCoreApplication.translate("MainWindow", u"22", None))
-        self.label_19.setText(QCoreApplication.translate("MainWindow", u"\u7aef\u53e3\uff1a", None))
+        self.lineEdit_s485_Axis_No.setText(QCoreApplication.translate("MainWindow", u"22", None))
         self.checkBox_point.setText(QCoreApplication.translate("MainWindow", u"\u70b9\u8fd0\u52a8", None))
+        self.checkBox_key.setText(QCoreApplication.translate("MainWindow", u"\u952e\u76d8\u5b9a\u4f4d", None))
+        self.label_19.setText(QCoreApplication.translate("MainWindow", u"\u7aef\u53e3\uff1a", None))
         self.label_18.setText(QCoreApplication.translate("MainWindow", u"\u8fd0\u52a8\u5361\u53f7\uff1a", None))
         self.pushButton_CardStart.setText(QCoreApplication.translate("MainWindow", u"\u542f\u52a8\u8fd0\u52a8\u5361", None))
         self.pushButton_CardStop.setText(QCoreApplication.translate("MainWindow", u"\u505c\u6b62", None))
@@ -653,27 +627,17 @@ class Ui_MainWindow(object):
         self.pushButton_CardCloseAll.setText(QCoreApplication.translate("MainWindow", u"\u5173\u5168\u90e8", None))
         self.pushButton_CardReset.setText(QCoreApplication.translate("MainWindow", u"\u8f74\u590d\u4f4d", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_0), QCoreApplication.translate("MainWindow", u"\u8fd0\u52a8\u5361", None))
-        self.groupBox_17.setTitle(QCoreApplication.translate("MainWindow", u"\u786c\u4ef6\u7aef\u53e3\u8bbe\u7f6e", None))
+        self.groupBox_17.setTitle(QCoreApplication.translate("MainWindow", u"\u4e94\u8f74\u65b9\u5411\u8bbe\u7f6e", None))
+        self.label_79.setText(QCoreApplication.translate("MainWindow", u"\u8fd0\u52a8\u5361\u4e94\u8f74\u65b9\u5411\uff1a", None))
 #if QT_CONFIG(tooltip)
         self.lineEdit_five_axis.setToolTip("")
 #endif // QT_CONFIG(tooltip)
         self.lineEdit_five_axis.setText(QCoreApplication.translate("MainWindow", u"[-1,1,1,1,-1]", None))
-        self.label_79.setText(QCoreApplication.translate("MainWindow", u"\u8fd0\u52a8\u5361\u4e94\u8f74\u65b9\u5411\uff1a", None))
+        self.label_81.setText(QCoreApplication.translate("MainWindow", u"\u952e\u76d8\u65b9\u5411\uff1a", None))
 #if QT_CONFIG(tooltip)
         self.lineEdit_five_key.setToolTip("")
 #endif // QT_CONFIG(tooltip)
         self.lineEdit_five_key.setText(QCoreApplication.translate("MainWindow", u"[-1,1,1,1,-1]", None))
-        self.label_33.setText(QCoreApplication.translate("MainWindow", u"\u8fd0\u52a8\u5361\u7f51\u7edc\u7f16\u53f7\uff1a", None))
-        self.label_81.setText(QCoreApplication.translate("MainWindow", u"\u952e\u76d8\u65b9\u5411\uff1a", None))
-#if QT_CONFIG(tooltip)
-        self.lineEdit_s485_Axis_No.setToolTip("")
-#endif // QT_CONFIG(tooltip)
-        self.lineEdit_s485_Axis_No.setText(QCoreApplication.translate("MainWindow", u"COM22", None))
-        self.label_36.setText(QCoreApplication.translate("MainWindow", u"S485 \u8f74\u590d\u4f4d\u7aef\u53e3\uff1a", None))
-#if QT_CONFIG(tooltip)
-        self.lineEdit_cardNo.setToolTip("")
-#endif // QT_CONFIG(tooltip)
-        self.lineEdit_cardNo.setText(QCoreApplication.translate("MainWindow", u"15", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_1), QCoreApplication.translate("MainWindow", u"\u8bbe\u7f6e", None))
     # retranslateUi
 

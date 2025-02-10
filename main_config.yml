@@ -1,0 +1,15 @@
+balls_count: '8'
+cardNo: '15'
+five_axis:
+- 1
+- 1
+- 1
+- 1
+- -1
+five_key:
+- 1
+- 1
+- 1
+- 1
+- -1
+s485_Axis_No: COM22

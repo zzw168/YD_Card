@@ -1,5 +1,6 @@
 import copy
 import json
+import os
 import socket
 import sys
 import threading
@@ -31,7 +32,8 @@ def query_sql():
             key_value3 = "赛道名称%"  # 读取字段
             key_value4 = "图像识别IP"  # 读取字段
             key_value5 = "全局配置.IP%"  # 读取字段
-            key_values = ["电压输出"]
+            key_value6 = "全局配置.驱动器端口"  # 读取字段
+            key_values = ["电压输出", "全局配置.IP", "全局配置.驱动器端口"]
             # key_values = ["电压输出", "网络摄像机", "赛道名称", "图像识别IP", "全局配置.IP"]
             # select_query = "SELECT * FROM config WHERE `user`=%s AND `key`=%s"
             select_query = ("SELECT * FROM config WHERE `user`=%s "
@@ -39,6 +41,7 @@ def query_sql():
                             "OR `key` LIKE %s "
                             "OR `key` LIKE %s "
                             "OR `key` = %s "
+                            "OR `key` LIKE %s "
                             "OR `key` LIKE %s)")
             res = fetch_query(conn, select_query,
                               [user_value,
@@ -46,7 +49,8 @@ def query_sql():
                                key_value2,
                                key_value3,
                                key_value4,
-                               key_value5])
+                               key_value5,
+                               key_value6])
             # print("Query Results:", type(res), res)
             text_sql = {}
             for index in range(len(res)):
@@ -834,6 +838,36 @@ def PlanBallNum_signal_accept(msg):
     scroll_to_bottom(ui.textBrowser)
 
 
+def load_main_yaml(yaml=None):
+    global balls_count
+    global five_axis
+    global five_key
+    global Voltage_list
+    file = "main_config.yml"
+    if os.path.exists(file):
+        f = open(file, 'r', encoding='utf-8')
+        main_all = yaml.safe_load(f)
+        f.close()
+
+        ui.lineEdit_CardNo.setText(main_all['cardNo'])
+        ui.lineEdit_s485_Axis_No.setText(main_all['s485_Axis_No'])
+        ui.lineEdit_five_axis.setText(str(main_all['five_axis']))
+        ui.lineEdit_five_key.setText(str(main_all['five_key']))
+        # 赋值变量
+        balls_count = abs(int(float(main_all['balls_count'])))
+        s485.s485_Axis_No = main_all['s485_Axis_No']
+        five_axis = main_all['five_axis']
+        five_key = main_all['five_key']
+    else:
+        print("文件不存在")
+    try:
+        voltage = query_sql()  # 16个电压输出
+        for i, key in enumerate(voltage.keys()):
+            Voltage_list[i] = voltage[key]
+    except:
+        ui.textBrowser.append('机关数据获取失败！')
+        print('机关数据获取失败！')
+
 class ZApp(QApplication):
     def __init__(self, argv):
         super().__init__(argv)
@@ -926,13 +960,7 @@ if __name__ == '__main__':
     s485.s485_Axis_No = 'COM22'
 
     Voltage_list = ['一弹射', '起砸门', '', '终点', '机关1', '', '', '', '', '', '', '', '', '', '', '']
-    try:
-        Voltage = query_sql()  # 16个电压输出
-        for i, key in enumerate(Voltage.keys()):
-            Voltage_list[i] = Voltage[key]
-    except:
-        ui.textBrowser.append('机关数据获取失败！')
-        print('机关数据获取失败！')
+    load_main_yaml()
     # print(Voltage_list)
 
     balls_count = 8  # 运行球数

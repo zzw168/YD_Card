@@ -727,28 +727,8 @@
               <property name="bottomMargin">
                <number>0</number>
               </property>
-              <item row="0" column="0">
-               <widget class="QCheckBox" name="checkBox_key">
-                <property name="minimumSize">
-                 <size>
-                  <width>90</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="font">
-                 <font>
-                  <family>微软雅黑</family>
-                  <pointsize>10</pointsize>
-                  <bold>true</bold>
-                 </font>
-                </property>
-                <property name="text">
-                 <string>键盘定位</string>
-                </property>
-               </widget>
-              </item>
               <item row="0" column="3">
-               <widget class="QLineEdit" name="lineEdit_CardNo_2">
+               <widget class="QLineEdit" name="lineEdit_s485_Axis_No">
                 <property name="minimumSize">
                  <size>
                   <width>30</width>
@@ -776,6 +756,40 @@
                 </property>
                </widget>
               </item>
+              <item row="0" column="1">
+               <widget class="QCheckBox" name="checkBox_point">
+                <property name="font">
+                 <font>
+                  <family>微软雅黑</family>
+                  <pointsize>10</pointsize>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>点运动</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QCheckBox" name="checkBox_key">
+                <property name="minimumSize">
+                 <size>
+                  <width>90</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="font">
+                 <font>
+                  <family>微软雅黑</family>
+                  <pointsize>10</pointsize>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>键盘定位</string>
+                </property>
+               </widget>
+              </item>
               <item row="0" column="2">
                <widget class="QLabel" name="label_19">
                 <property name="minimumSize">
@@ -799,20 +813,6 @@
                 </property>
                 <property name="text">
                  <string>端口：</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QCheckBox" name="checkBox_point">
-                <property name="font">
-                 <font>
-                  <family>微软雅黑</family>
-                  <pointsize>10</pointsize>
-                  <bold>true</bold>
-                 </font>
-                </property>
-                <property name="text">
-                 <string>点运动</string>
                 </property>
                </widget>
               </item>
@@ -1203,7 +1203,7 @@
           <property name="maximumSize">
            <size>
             <width>600</width>
-            <height>150</height>
+            <height>100</height>
            </size>
           </property>
           <property name="font">
@@ -1214,10 +1214,24 @@
            </font>
           </property>
           <property name="title">
-           <string>硬件端口设置</string>
+           <string>五轴方向设置</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_35">
-           <item row="4" column="2">
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_79">
+             <property name="font">
+              <font>
+               <family>微软雅黑</family>
+               <pointsize>12</pointsize>
+               <bold>false</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>运动卡五轴方向：</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
             <widget class="QLineEdit" name="lineEdit_five_axis">
              <property name="font">
               <font>
@@ -1234,52 +1248,7 @@
              </property>
             </widget>
            </item>
-           <item row="4" column="0">
-            <widget class="QLabel" name="label_79">
-             <property name="font">
-              <font>
-               <family>微软雅黑</family>
-               <pointsize>12</pointsize>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>运动卡五轴方向：</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="4">
-            <widget class="QLineEdit" name="lineEdit_five_key">
-             <property name="font">
-              <font>
-               <family>微软雅黑</family>
-               <pointsize>10</pointsize>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="toolTip">
-              <string/>
-             </property>
-             <property name="text">
-              <string>[-1,1,1,1,-1]</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0" colspan="2">
-            <widget class="QLabel" name="label_33">
-             <property name="font">
-              <font>
-               <family>微软雅黑</family>
-               <pointsize>12</pointsize>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>运动卡网络编号：</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="3">
+           <item row="3" column="0">
             <widget class="QLabel" name="label_81">
              <property name="font">
               <font>
@@ -1293,8 +1262,8 @@
              </property>
             </widget>
            </item>
-           <item row="1" column="2" colspan="3">
-            <widget class="QLineEdit" name="lineEdit_s485_Axis_No">
+           <item row="3" column="1">
+            <widget class="QLineEdit" name="lineEdit_five_key">
              <property name="font">
               <font>
                <family>微软雅黑</family>
@@ -1306,44 +1275,7 @@
               <string/>
              </property>
              <property name="text">
-              <string>COM22</string>
-             </property>
-             <property name="readOnly">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0" colspan="2">
-            <widget class="QLabel" name="label_36">
-             <property name="font">
-              <font>
-               <family>微软雅黑</family>
-               <pointsize>12</pointsize>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>S485 轴复位端口：</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="2" colspan="3">
-            <widget class="QLineEdit" name="lineEdit_cardNo">
-             <property name="font">
-              <font>
-               <family>微软雅黑</family>
-               <pointsize>10</pointsize>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="toolTip">
-              <string/>
-             </property>
-             <property name="text">
-              <string>15</string>
-             </property>
-             <property name="readOnly">
-              <bool>false</bool>
+              <string>[-1,1,1,1,-1]</string>
              </property>
             </widget>
            </item>
