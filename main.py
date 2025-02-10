@@ -6,6 +6,7 @@ import sys
 import threading
 import time
 import pynput
+import yaml
 from PySide6.QtCore import Slot, QThread, Signal
 from PySide6.QtGui import QIcon, QTextCursor
 from PySide6.QtWidgets import QMainWindow, QMessageBox, QApplication, QTextBrowser
@@ -33,7 +34,8 @@ def query_sql():
             key_value4 = "图像识别IP"  # 读取字段
             key_value5 = "全局配置.IP%"  # 读取字段
             key_value6 = "全局配置.驱动器端口"  # 读取字段
-            key_values = ["电压输出", "全局配置.IP", "全局配置.驱动器端口"]
+            key_values = ["电压输出"]
+            port_values = ["全局配置.IP", "全局配置.驱动器端口"]
             # key_values = ["电压输出", "网络摄像机", "赛道名称", "图像识别IP", "全局配置.IP"]
             # select_query = "SELECT * FROM config WHERE `user`=%s AND `key`=%s"
             select_query = ("SELECT * FROM config WHERE `user`=%s "
@@ -53,13 +55,17 @@ def query_sql():
                                key_value6])
             # print("Query Results:", type(res), res)
             text_sql = {}
+            text_port = {}
             for index in range(len(res)):
                 for k in key_values:
                     if res[index][3] != '0' and (k in res[index][2]):
                         text_sql[res[index][2]] = res[index][3]
+                for p in port_values:
+                    if res[index][3] != '0' and (p in res[index][2]):
+                        text_port[res[index][2]] = res[index][3]
             # 关闭连接
             conn.close()
-            return text_sql
+            return text_sql, text_port
     except RuntimeError as e:
         print(f"Runtime error occurred: {e}")
     except Exception as e:
@@ -838,7 +844,7 @@ def PlanBallNum_signal_accept(msg):
     scroll_to_bottom(ui.textBrowser)
 
 
-def load_main_yaml(yaml=None):
+def load_main_yaml():
     global balls_count
     global five_axis
     global five_key
@@ -849,24 +855,31 @@ def load_main_yaml(yaml=None):
         main_all = yaml.safe_load(f)
         f.close()
 
-        ui.lineEdit_CardNo.setText(main_all['cardNo'])
-        ui.lineEdit_s485_Axis_No.setText(main_all['s485_Axis_No'])
         ui.lineEdit_five_axis.setText(str(main_all['five_axis']))
         ui.lineEdit_five_key.setText(str(main_all['five_key']))
         # 赋值变量
         balls_count = abs(int(float(main_all['balls_count'])))
-        s485.s485_Axis_No = main_all['s485_Axis_No']
         five_axis = main_all['five_axis']
         five_key = main_all['five_key']
     else:
         print("文件不存在")
     try:
-        voltage = query_sql()  # 16个电压输出
+        voltage, ports = query_sql()  # 16个电压输出
+        print(voltage)
+        print(ports)
         for i, key in enumerate(voltage.keys()):
             Voltage_list[i] = voltage[key]
+        for i, key in enumerate(ports.keys()):
+            if key == '全局配置.IP':
+                position = ports[key].rfind(".")
+                ui.lineEdit_CardNo.setText(ports[key][position + 1:])
+            elif key == '全局配置.驱动器端口':
+                ui.lineEdit_s485_Axis_No.setText(ports[key])
+                s485.s485_Axis_No = 'COM%s' % ports[key]
     except:
         ui.textBrowser.append('机关数据获取失败！')
         print('机关数据获取失败！')
+
 
 class ZApp(QApplication):
     def __init__(self, argv):
