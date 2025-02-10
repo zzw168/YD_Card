@@ -12,7 +12,54 @@ from PySide6.QtWidgets import QMainWindow, QMessageBox, QApplication, QTextBrows
 from YD_UI import Ui_MainWindow
 from utils.Serial485_unit import Serial485
 from utils.SportCard_unit import SportCard, card_res
-from utils.tool_unit import succeed, fail, is_natural_num
+from utils.tool_unit import succeed, fail, is_natural_num, check_network_with_ip
+from utils.z_MySql import create_connection, fetch_query
+
+
+def query_sql():
+    # 创建数据库连接
+    try:
+        conn = create_connection("192.168.0.80", "root", "root", "dataini")
+
+        if conn:
+            local_ip = check_network_with_ip()
+
+            # 查询配置表的 SQL 语句
+            user_value = local_ip[1]  # 网卡号
+            key_value = "电压输出%"  # 读取字段
+            key_value2 = "网络摄像机%"  # 读取字段
+            key_value3 = "赛道名称%"  # 读取字段
+            key_value4 = "图像识别IP"  # 读取字段
+            key_value5 = "全局配置.IP%"  # 读取字段
+            key_values = ["电压输出"]
+            # key_values = ["电压输出", "网络摄像机", "赛道名称", "图像识别IP", "全局配置.IP"]
+            # select_query = "SELECT * FROM config WHERE `user`=%s AND `key`=%s"
+            select_query = ("SELECT * FROM config WHERE `user`=%s "
+                            "AND (`key` LIKE %s "
+                            "OR `key` LIKE %s "
+                            "OR `key` LIKE %s "
+                            "OR `key` = %s "
+                            "OR `key` LIKE %s)")
+            res = fetch_query(conn, select_query,
+                              [user_value,
+                               key_value,
+                               key_value2,
+                               key_value3,
+                               key_value4,
+                               key_value5])
+            # print("Query Results:", type(res), res)
+            text_sql = {}
+            for index in range(len(res)):
+                for k in key_values:
+                    if res[index][3] != '0' and (k in res[index][2]):
+                        text_sql[res[index][2]] = res[index][3]
+            # 关闭连接
+            conn.close()
+            return text_sql
+    except RuntimeError as e:
+        print(f"Runtime error occurred: {e}")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
 
 
 def organ_shoot():  # 弹射开关
@@ -371,7 +418,8 @@ def pos_signal_accept(msg):
     try:
         if len(msg) == 5 and not ui.checkBox_point.isChecked():
             for i in range(0, len(msg)):
-                getattr(ui, 'lineEdit_axis%s' % i).setText(str(msg[i]))
+                if getattr(ui, 'lineEdit_axis%s' % i).text() != str(msg[i]):
+                    getattr(ui, 'lineEdit_axis%s' % i).setText(str(msg[i]))
         else:
             pass
     except:
@@ -462,19 +510,13 @@ class AxisThread(QThread):
                         res = sc.GASetPrfPos(s485_data['nAxisNum'], s485_data['highPos'])
                         if res == 0:
                             self._signal.emit(succeed('%s 轴复位完成！' % s485_data['nAxisNum']))
-                            sc.card_move(int(s485_data['nAxisNum']), 0)
+                            flg_start['card'] = True
                         flg_start['s485'] = True
                     else:
                         flg_start['s485'] = False
+                        flg_start['card'] = False
                         self._signal.emit(fail('复位串口未连接！'))
-                res = sc.card_update()
-                if res == 0:
-                    flg_start['card'] = True
-                    # Pos_Thread.run_flg = True
-                    self._signal.emit(succeed('轴复位完成！'))
-                else:
-                    flg_start['card'] = False
-                    self._signal.emit(fail('运动卡链接出错！'))
+                self._signal.emit(succeed('轴复位完成！'))
             except:
                 print("轴复位出错！")
                 flg_start['s485'] = False
@@ -485,9 +527,10 @@ class AxisThread(QThread):
 def Axis_signal_accept(msg):
     # print(message)
     try:
-        if '轴复位完成！' in msg:
+        if '轴复位完成！' == msg:
+            time.sleep(0.2)
             for index in range(0, 5):
-                getattr(ui, 'lineEdit_axis%s' % index).setText('0')
+                point_data['axis'][index] = str(pValue[index])
         ui.textBrowser.append(str(msg))
         scroll_to_bottom(ui.textBrowser)
     except:
@@ -513,25 +556,17 @@ class SocketThread(QThread):
 
     def run(self) -> None:
         global flg_start
-        message = '{yq}'
+        global client_socket
+        message = '{y@0}'
+        response = '{yj0}'
         while self.running:
             time.sleep(2)
             if not self.run_flg:
                 continue
             try:
-                # 创建 TCP 套接字
-                client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                # 连接服务器
-                client_socket.connect((server_ip, server_port))
-                print(f"成功连接到服务器 {server_ip}:{server_port}")
-
                 # 持续与服务器交互
                 while self.run_flg:
-                    p = ['0'] * 5
-                    for index in range(len(p)):
-                        p[index] = str(pValue[index])
-                    print(p, point_data['axis'])
-                    if p == point_data['axis']:
+                    if cmd_flag() or ('{yd' not in response):
                         # 发送数据到服务器
                         client_socket.sendall(message.encode("gbk"))
                         print(f"已发送数据: {message}")
@@ -541,12 +576,13 @@ class SocketThread(QThread):
                         self._signal.emit(response)
                         print(f"服务器响应: {response}")
                         message = data_split(response)
-                    time.sleep(0.1)
+                    time.sleep(0.2)
 
             except ConnectionError as e:
                 print(f"连接失败: {e}")
             finally:
-                # client_socket.close()
+                client_socket.close()
+                self._signal.emit(fail("已关闭连接"))
                 print("已关闭连接")
 
 
@@ -562,6 +598,14 @@ def Socket_signal_accept(msg):
         print("运行数据处理出错！")
 
 
+def cmd_flag():
+    res = True
+    for index in range(2):
+        if abs(int(point_data['axis'][index]) - pValue[index]) > 5000:
+            res = False
+    return res
+
+
 def data_split(data):
     global point_data
     result = data.split("|")
@@ -573,8 +617,9 @@ def data_split(data):
         result[0] = result[0][position + 3:]
         data_axis = result[0: 5]
         point_data['axis'] = data_axis
-
-        result[res_num] = result[res_num][0:-1]
+        position = result[res_num].find('}')
+        if position != -1:
+            result[res_num] = result[res_num][0:position]
         data_speed = result[res_num].split(",")
         for index, item in enumerate(data_speed):
             if index < 5:
@@ -594,15 +639,28 @@ def data_split(data):
                         point_data['speed'][index][1] = result[6]
                     if point_data['speed'][index][2] == '0':
                         point_data['speed'][index][2] = result[7]
-        print(point_data)
+        # print(point_data)
         PlanCmd_Thread.run_flg = True
         return '{yq}'
-    if '{yy}' == data:
+    if '{yy' in data:
         return '{yy%s,%s,%s,%s,%s}' % (str(pValue[0]), str(pValue[1]), str(pValue[2]), str(pValue[3]), str(pValue[4]))
     elif '{y3' in data:
         return '%s@%s|%s|%s|%s|%s}' % (
             data[0:-1], str(pValue[0]), str(pValue[1]), str(pValue[2]), str(pValue[3]), str(pValue[4]))
-
+    elif '{y2' in data:
+        position = data.find('|')
+        position_end = data.find('}')
+        if position != -1 and position_end != -1:
+            name = data[position + 1: position_end]
+            switch = data[3: position]
+            print(name, switch)
+            for Voltage_index, Voltage_item in enumerate(Voltage_list):
+                print('打开', name, switch)
+                if name == Voltage_item:
+                    sw = 1 if switch == '0' else 0
+                    sc.GASetExtDoBit(Voltage_index, sw)
+                    time.sleep(0.1)
+                    return '{y2}'
     return '{yq}'
 
 
@@ -697,6 +755,81 @@ def Cmd_signal_accept(msg):
         print("运行数据处理出错！")
 
 
+class PlanBallNumThread(QThread):
+    """
+    PlanBallNumThread(QThread) 摄像头运动方案线程
+    """
+    _signal = Signal(object)
+
+    def __init__(self):
+        super(PlanBallNumThread, self).__init__()
+        self.run_flg = False
+        self.running = True
+
+    def stop(self):
+        self.run_flg = False
+        self.running = False  # 修改标志位，线程优雅退出
+        self.quit()  # 退出线程事件循环
+
+    def run(self) -> None:
+        global flg_start
+        while self.running:
+            time.sleep(0.1)
+            if (not self.run_flg) or (not flg_start['card']):
+                continue
+            print('正在接收运动卡输入信息！')
+            try:
+                res = sc.GASetDiReverseCount()  # 输入次数归0
+                num_old = 0
+                if res == 0:
+                    while True:
+                        res, value = sc.GAGetDiReverseCount()
+                        # print(res, value)
+                        if res == 0:
+                            num = int(value[0] / 2)
+                            if num != num_old:
+                                num_old = num
+                                # 发送数据到服务器
+                                client_socket.sendall('{y4}'.encode("gbk"))
+                                self._signal.emit(num)
+                            if num >= balls_count:
+                                break
+                        else:
+                            flg_start['card'] = False
+                            self._signal.emit(fail("运动板x输入通信出错！"))
+                            break
+                        time.sleep(0.01)
+                else:
+                    print("次数归0 失败！")
+                    flg_start['card'] = False
+                    self._signal.emit(fail("运动板x输入通信出错！"))
+            except:
+                print("接收运动卡输入 运行出错！")
+                flg_start['card'] = False
+                self._signal.emit(fail("运动板x输入通信出错！"))
+            self.run_flg = False
+
+
+def PlanBallNum_signal_accept(msg):
+    if isinstance(msg, int):
+        ui.lineEdit_ball_end.setText(str(msg))
+    elif '计球倒计时' in msg:
+        text_lines = ui.textBrowser_msg.toHtml().splitlines()
+        if len(text_lines) >= 1:
+            if '计球倒计时' in text_lines[-1]:
+                text_lines[-1] = msg
+                new_text = "\n".join(text_lines)
+                ui.textBrowser_msg.setHtml(new_text)
+                scroll_to_bottom(ui.textBrowser_msg)
+            else:
+                ui.textBrowser_msg.append(msg)
+                scroll_to_bottom(ui.textBrowser_msg)
+    else:
+        ui.textBrowser.append(msg)
+        ui.textBrowser_msg.append(msg)
+        scroll_to_bottom(ui.textBrowser_msg)
+
+
 class ZApp(QApplication):
     def __init__(self, argv):
         super().__init__(argv)
@@ -725,6 +858,7 @@ class ZApp(QApplication):
             CardStart_Thread.stop()
             PlanCmd_Thread.stop()
             Socket_Thread.stop()
+            PlanBallNum_Thread.stop()
         except Exception as e:
             print(f"Error stopping threads: {e}")
 
@@ -736,6 +870,7 @@ class ZApp(QApplication):
             CardStart_Thread.wait()
             PlanCmd_Thread.wait()
             Socket_Thread.wait()
+            PlanBallNum_Thread.wait()
         except Exception as e:
             print(f"Error waiting threads: {e}")
 
@@ -786,6 +921,18 @@ if __name__ == '__main__':
     s485 = Serial485()  # 摄像头
     s485.s485_Axis_No = 'COM22'
 
+    Voltage_list = ['一弹射', '起砸门', '', '终点', '机关1', '', '', '', '', '', '', '', '', '', '', '']
+    try:
+        Voltage = query_sql()  # 16个电压输出
+        for i, key in enumerate(Voltage.keys()):
+            Voltage_list[i] = Voltage[key]
+    except:
+        ui.textBrowser.append('机关数据获取失败！')
+        print('机关数据获取失败！')
+    # print(Voltage_list)
+
+    balls_count = 8  # 运行球数
+    balls_send = 0  # 发送球数据
     flg_key_run = True  # 键盘控制标志
     pValue = [0, 0, 0, 0, 0]  # 各轴位置
     five_key = [1, 1, 1, 1, -1]
@@ -804,6 +951,7 @@ if __name__ == '__main__':
 
     CardStart_Thread = CardStartThread()  # 运动卡开启线程 12
     CardStart_Thread._signal.connect(CardStart_signal_accept)
+    CardStart_Thread.start()
 
     Axis_Thread = AxisThread()  # 轴复位 7
     Axis_Thread._signal.connect(Axis_signal_accept)
@@ -816,10 +964,19 @@ if __name__ == '__main__':
     # 目标服务器 IP 和端口
     server_ip = "127.0.0.1"  # 替换为实际服务器地址
     server_port = 19888
+    # 创建 TCP 套接字
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # 连接服务器
+    client_socket.connect((server_ip, server_port))
+    print(f"成功连接到服务器 {server_ip}:{server_port}")
 
     Socket_Thread = SocketThread()  # 轴复位 7
     Socket_Thread._signal.connect(Socket_signal_accept)
     Socket_Thread.start()
+
+    PlanBallNum_Thread = PlanBallNumThread()  # 统计过终点的球数 5
+    PlanBallNum_Thread._signal.connect(PlanBallNum_signal_accept)
+    PlanBallNum_Thread.start()
 
     ui.pushButton_CardStart.clicked.connect(card_start)
     ui.pushButton_CardStop.clicked.connect(cmd_stop)
