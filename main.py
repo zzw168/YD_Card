@@ -763,7 +763,7 @@ class PlanBallNumThread(QThread):
 
     def __init__(self):
         super(PlanBallNumThread, self).__init__()
-        self.run_flg = False
+        self.run_flg = True
         self.running = True
 
     def stop(self):
@@ -780,9 +780,11 @@ class PlanBallNumThread(QThread):
             print('正在接收运动卡输入信息！')
             try:
                 res = sc.GASetDiReverseCount()  # 输入次数归0
+                res1 = sc.GASetDiReverseCount(diIndex=1)  # 输入次数归0
                 num_old = 0
-                if res == 0:
-                    while True:
+                num_old1 = 0
+                if res == 0 and res1 == 0:
+                    while self.run_flg:
                         res, value = sc.GAGetDiReverseCount()
                         # print(res, value)
                         if res == 0:
@@ -791,9 +793,26 @@ class PlanBallNumThread(QThread):
                                 num_old = num
                                 # 发送数据到服务器
                                 client_socket.sendall('{y4}'.encode("gbk"))
-                                self._signal.emit(num)
+                                self._signal.emit(str(num))
+                                print(num)
                             if num >= balls_count:
-                                break
+                                res = sc.GASetDiReverseCount()  # 输入次数归0
+                        else:
+                            flg_start['card'] = False
+                            self._signal.emit(fail("运动板x输入通信出错！"))
+                            break
+
+                        res1, value1 = sc.GAGetDiReverseCount(diIndex=1)
+                        if res1 == 0:
+                            num1 = int(value1[0] / 2)
+                            if num1 != num_old1:
+                                num_old1 = num1
+                                # 发送数据到服务器
+                                client_socket.sendall('{y9}'.encode("gbk"))
+                                self._signal.emit(str(num1))
+                                print(num1)
+                            if num1 >= balls_count:
+                                res1 = sc.GASetDiReverseCount(diIndex=1)  # 输入次数归0
                         else:
                             flg_start['card'] = False
                             self._signal.emit(fail("运动板x输入通信出错！"))
@@ -807,27 +826,12 @@ class PlanBallNumThread(QThread):
                 print("接收运动卡输入 运行出错！")
                 flg_start['card'] = False
                 self._signal.emit(fail("运动板x输入通信出错！"))
-            self.run_flg = False
+            # self.run_flg = False
 
 
 def PlanBallNum_signal_accept(msg):
-    if isinstance(msg, int):
-        ui.lineEdit_ball_end.setText(str(msg))
-    elif '计球倒计时' in msg:
-        text_lines = ui.textBrowser_msg.toHtml().splitlines()
-        if len(text_lines) >= 1:
-            if '计球倒计时' in text_lines[-1]:
-                text_lines[-1] = msg
-                new_text = "\n".join(text_lines)
-                ui.textBrowser_msg.setHtml(new_text)
-                scroll_to_bottom(ui.textBrowser_msg)
-            else:
-                ui.textBrowser_msg.append(msg)
-                scroll_to_bottom(ui.textBrowser_msg)
-    else:
-        ui.textBrowser.append(msg)
-        ui.textBrowser_msg.append(msg)
-        scroll_to_bottom(ui.textBrowser_msg)
+    ui.textBrowser.append(msg)
+    scroll_to_bottom(ui.textBrowser)
 
 
 class ZApp(QApplication):
