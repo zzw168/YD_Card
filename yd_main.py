@@ -1,9 +1,5 @@
-import copy
-import json
 import os
-import socket
 import sys
-import threading
 import time
 import pynput
 import yaml
@@ -12,6 +8,7 @@ from PySide6.QtGui import QIcon, QTextCursor
 from PySide6.QtWidgets import QMainWindow, QMessageBox, QApplication, QTextBrowser
 
 from YD_UI import Ui_MainWindow
+from utils.tcp_client import TCPClient
 from utils.Serial485_unit import Serial485
 from utils.SportCard_unit import SportCard, card_res
 from utils.tool_unit import succeed, fail, is_natural_num, check_network_with_ip
@@ -578,10 +575,10 @@ class SocketThread(QThread):
                 while self.run_flg:
                     if cmd_flag() or ('{yd' not in response):
                         # 发送数据到服务器
-                        client_socket.sendall(message.encode("gbk"))
+                        client_socket.send_data(message)
                         print(f"已发送数据: {message}")
 
-                        response = client_socket.recv(1024).decode("gbk", errors="ignore")
+                        response = client_socket.receive_data()
 
                         self._signal.emit(response)
                         print(f"服务器响应: {response}")
@@ -591,9 +588,8 @@ class SocketThread(QThread):
             except ConnectionError as e:
                 print(f"连接失败: {e}")
             finally:
-                client_socket.close()
-                self._signal.emit(fail("已关闭连接"))
-                print("已关闭连接")
+                client_socket.reconnect()
+                self._signal.emit(fail("正在尝试重新连接..."))
 
 
 def Socket_signal_accept(msg):
@@ -999,9 +995,12 @@ class ZMainwindow(QMainWindow):
         else:
             event.ignore()  # 忽略关闭事件，程序继续运行
 
+
 def my_test():
     # 模拟写入超大文本
     pass
+
+
 if __name__ == '__main__':
     app = ZApp(sys.argv)
 
@@ -1052,10 +1051,7 @@ if __name__ == '__main__':
     server_ip = "127.0.0.1"  # 替换为实际服务器地址
     server_port = 19888
     # 创建 TCP 套接字
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # 连接服务器
-    client_socket.connect((server_ip, server_port))
-    print(f"成功连接到服务器 {server_ip}:{server_port}")
+    client_socket = TCPClient(server_ip, server_port)
 
     Socket_Thread = SocketThread()  # 轴复位 7
     Socket_Thread._signal.connect(Socket_signal_accept)
